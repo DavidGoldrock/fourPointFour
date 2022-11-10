@@ -1,6 +1,7 @@
 import socket
 from threading import Thread
 import os
+
 import Protocol
 
 # green terminal:
@@ -56,15 +57,16 @@ def checkValidity(data: str) -> tuple[bool, int, str, dict[str, str]]:
 		data = data[8:]
 		if data[:1] != "\r\n":
 			decodedValue = data[2:].split("\r\n")
+			decodedValue = decodedValue[:-2]
 			return True, option, path.strip(), {data2[0]: data2[1] for data2 in
-												[data.split(":") for data in decodedValue if data.split(":") != ['']]}
+												[data.split(":") for data in decodedValue]}
 		else:
 			return False, 0, "", {}
 
 
 def getFromFile(path) -> bytes:
 	if ".." in path:
-		response = Protocol.formatHttp(401)
+		response = Protocol.formatHttpGet(401)
 	else:
 		if path == "/":
 			path = "/index.html"
@@ -72,7 +74,7 @@ def getFromFile(path) -> bytes:
 			with open("./webroot" + path, "rb") as file:
 				response = Protocol.formatFileHttp(200, path, file)
 		except OSError:
-			response = Protocol.formatHttp(500)
+			response = Protocol.formatHttpGet(500)
 	return response
 
 
@@ -80,27 +82,30 @@ def handleRequest(data: str, conn: socket):
 	response = b""
 	valid, option, path, headers = checkValidity(data)
 	if not valid:
-		response = Protocol.formatHttp(400)
+		response = Protocol.formatHttpGet(400)
 	else:
-		if option == "GET":
-			function = Protocol.startsWithOption(path, Protocol.functions.keys())
-			if function is None:
-				response = getFromFile(path)
-			else:
-				responseFunc = Protocol.functions[function]
-				try:
-					if "?" not in path:
-						response = Protocol.formatHttp(200, None, str(responseFunc()).encode(Protocol.FORMAT))
-					else:
-						function, params_string = path.split("?")
-						# create a new dictionary x=2&y=3 -> {"x":"2","y":"3"}
-						params = {param.split("=")[0]: param.split("=")[1] for param in params_string.split("&")}
-						response = Protocol.formatHttp(200, None, str(responseFunc(params)).encode(Protocol.FORMAT))
-				except KeyError as e:
-					response = Protocol.formatHttp(400)
-		elif option == "POST":
-			requestData = conn.recv(int(headers['Content-Length']))
-			response = Protocol.formatHttp(500)
+
+		function = Protocol.startsWithOption(path, Protocol.functions.keys())
+		if function is None:
+			response = getFromFile(path)
+		else:
+			responseFunc = Protocol.functions[function]
+			try:
+				function, params_string = path.split("?")
+				# create a new dictionary x=2&y=3 -> {"x":"2","y":"3"}
+				params = {param.split("=")[0]: param.split("=")[1] for param in params_string.split("&")}
+				if option == "GET":
+					response = Protocol.formatHttpGet(200, None, str(responseFunc(params)).encode(Protocol.FORMAT))
+				elif option == "POST":
+					requestData = conn.recv(int(headers['Content-Length']))
+					responseFunc(params, requestData)
+					response = Protocol.formatHttpPost(200)
+					print(response)
+			except KeyError as e:
+				if option == "GET":
+					response = Protocol.formatHttpGet(400)
+				elif option == "POST":
+					response = Protocol.formatHttpPost(400)
 	return response
 
 
