@@ -152,5 +152,4 @@ def upload(data, params):
 	return
 
 
-functions = {"/calculate-next": lambda data: calculateNext(data), "/calculate-area": lambda data: calculateArea(data),
-			 "/upload": lambda data, params: upload(data, params)}
+functions = {"/calculate-next": calculateNext, "/calculate-area": calculateArea, "/upload": upload}
