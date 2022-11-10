@@ -142,7 +142,7 @@ def calculateNext(data: dict) -> int:
 	return int(data["num"]) + 1
 
 
-def calculateArea(data: dict) -> int:
+def calculateArea(data: dict) -> int: 
 	return int(float(data["width"])) * int(float(data["height"])) // 2
 
 
