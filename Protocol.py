@@ -2,10 +2,12 @@ from wsgiref.handlers import format_date_time
 from datetime import datetime
 from time import mktime
 from io import TextIOWrapper
+import socket
+from typing import List
 
 FORMAT = 'utf-8'
 PORT = 80
-MAX_SIZE = 2048
+MAX_SIZE = 4096
 VERSION = 1.1
 responses = {
 	100: ('Continue', 'Request received, please continue'),
@@ -93,7 +95,7 @@ filenameToType = {
 }
 
 
-def startsWithOption(data: list | str, options: list[list] | list[str]) -> list | str:
+def startsWithOption(data: list | str, options: List[list] | List[str]) -> any:
 	for option in options:
 		try:
 			if data[:len(option)] == option:

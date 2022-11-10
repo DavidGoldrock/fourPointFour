@@ -29,15 +29,13 @@ def ReceiveRequest(conn: socket) -> bool:
 	"""
 	shouldStay = True
 	try:
-		data = conn.recv(Protocol.MAX_SIZE)
-		data, params = data.split(b"\r\n\r\n")
-		data = data.decode(Protocol.FORMAT)
+		data = conn.recv(Protocol.MAX_SIZE).decode(Protocol.FORMAT)
 	# print("<<<<" + repr(data) + "<END>")
-	except socket.error | UnicodeDecodeError:
+	except (socket.error, UnicodeDecodeError):
 		return False
 
 	if len(data) != 0:
-		response = handleRequest(data)
+		response = handleRequest(data, conn)
 		# print(">>>>>" + repr(response) + "<END>")
 		conn.sendall(response)
 	else:
@@ -45,22 +43,23 @@ def ReceiveRequest(conn: socket) -> bool:
 	return shouldStay
 
 
-def checkValidity(data: str) -> tuple[bool, int, str, list[str]]:
+def checkValidity(data: str) -> tuple[bool, int, str, dict[str, str]]:
 	option = Protocol.startsWithOption(data, Protocol.httpOptions)
 	if option is None:
-		return False, 0, "", [""]
+		return False, 0, "", {}
 	data = data.strip(option)
 	path = data[:data.index("HTTP/1.1")]
 	data = data[len(path):]
 	if data[:8] != "HTTP/1.1":
-		return False, 0, "", [""]
+		return False, 0, "", {}
 	else:
 		data = data[8:]
 		if data[:1] != "\r\n":
 			decodedValue = data[2:].split("\r\n")
-			return True, option, path.strip(), decodedValue
+			return True, option, path.strip(), {data2[0]: data2[1] for data2 in
+												[data.split(":") for data in decodedValue if data.split(":") != ['']]}
 		else:
-			return False, 0, "", [""]
+			return False, 0, "", {}
 
 
 def getFromFile(path) -> bytes:
@@ -77,7 +76,7 @@ def getFromFile(path) -> bytes:
 	return response
 
 
-def handleRequest(data: str):
+def handleRequest(data: str, conn: socket):
 	response = b""
 	valid, option, path, headers = checkValidity(data)
 	if not valid:
@@ -100,7 +99,7 @@ def handleRequest(data: str):
 				except KeyError as e:
 					response = Protocol.formatHttp(400)
 		elif option == "POST":
-			print(path)
+			requestData = conn.recv(int(headers['Content-Length']))
 			response = Protocol.formatHttp(500)
 	return response
 
