@@ -56,10 +56,7 @@ def checkValidity(data: str) -> tuple[bool, int, str, dict[str, str]]:
 	else:
 		data = data[8:]
 		if data[:1] != "\r\n":
-			decodedValue = data[2:].split("\r\n")
-			decodedValue = decodedValue[:-2]
-			return True, option, path.strip(), {data2[0]: data2[1] for data2 in
-												[data.split(":") for data in decodedValue]}
+			return True, option, path.strip(), Protocol.dictify(data[2:-4],":","\r\n")
 		else:
 			return False, 0, "", {}
 
@@ -92,8 +89,7 @@ def handleRequest(data: str, conn: socket):
 			responseFunc = Protocol.functions[function]
 			try:
 				function, params_string = path.split("?")
-				# create a new dictionary x=2&y=3 -> {"x":"2","y":"3"}
-				params = {param.split("=")[0]: param.split("=")[1] for param in params_string.split("&")}
+				params = Protocol.dictify(params_string,"=","&")
 				if option == "GET":
 					response = Protocol.formatHttpGet(200, None, str(responseFunc(params)).encode(Protocol.FORMAT))
 				elif option == "POST":
@@ -134,7 +130,7 @@ def start():
 		conn = server.accept()[0]
 		Thread(target=handleClient, args=(conn,), daemon=True).start()
 		CLIENT_COUNT += 1
-		print(f"[STATUS] Number of active users:{CLIENT_COUNT}")
+		print(f"[STATUS] Number of active requests:{CLIENT_COUNT}")
 
 
 def debugPrinting():

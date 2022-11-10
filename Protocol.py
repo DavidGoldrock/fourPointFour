@@ -94,6 +94,8 @@ filenameToType = {
 	"ico": "image/vnd.microsoft.icon",
 }
 
+def dictify(source:str,equalSign:str, seperator:str):
+	return {data2[0]: data2[1] for data2 in [data.split(equalSign) for data in source.split(seperator)]}
 
 def startsWithOption(data: list | str, options: List[list] | List[str]) -> any:
 	for option in options:
