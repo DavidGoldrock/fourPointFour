@@ -147,9 +147,14 @@ def calculateNext(data: dict) -> int:
 def calculateArea(data: dict) -> int: 
 	return int(float(data["width"])) * int(float(data["height"])) // 2
 
+class CustomError(Exception):
+	pass
 
 def upload(data, params):
-	with open("./webroot/" + data["file-name"], "wb") as f:
+	if not (data["file-name"][-3:] == "png" or data["file-name"][-3:] == "jpg"):
+		print("ERROR",data["file-name"][-3:])
+		raise CustomError("File extension not supported")
+	with open("./webroot/pictures/" + data["file-name"], "wb") as f:
 		f.write(params)
 	return
 

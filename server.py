@@ -97,11 +97,12 @@ def handleRequest(data: str, conn: socket):
 					responseFunc(params, requestData)
 					response = Protocol.formatHttpPost(200)
 					print(response)
-			except KeyError as e:
+			except (Protocol.CustomError, KeyError,OSError) as e:
+				print("EEEEEEEEEEEEEEEEEEEEEEEE")
 				if option == "GET":
 					response = Protocol.formatHttpGet(400)
 				elif option == "POST":
-					response = Protocol.formatHttpPost(400)
+					response = Protocol.formatHttpPost(400,None,b"<div>" + str(e).encode() + b"</div>")
 	return response
 
 
