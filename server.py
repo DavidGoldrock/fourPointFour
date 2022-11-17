@@ -56,7 +56,7 @@ def checkValidity(data: str) -> tuple[bool, int, str, dict[str, str]]:
 	else:
 		data = data[8:]
 		if data[:1] != "\r\n":
-			return True, option, path.strip(), Protocol.dictify(data[2:-4],":","\r\n")
+			return True, option, path.strip(), Protocol.dictify(data[2:-4], ":", "\r\n")
 		else:
 			return False, 0, "", {}
 
@@ -70,7 +70,8 @@ def getFromFile(path) -> bytes:
 		try:
 			with open("./webroot" + path, "rb") as file:
 				response = Protocol.formatFileHttp(200, path, file)
-		except OSError:
+		except OSError as e:
+			print(e)
 			response = Protocol.formatHttpGet(500)
 	return response
 
@@ -89,20 +90,20 @@ def handleRequest(data: str, conn: socket):
 			responseFunc = Protocol.functions[function]
 			try:
 				function, params_string = path.split("?")
-				params = Protocol.dictify(params_string,"=","&")
+				params = Protocol.dictify(params_string, "=", "&")
 				if option == "GET":
-					response = Protocol.formatHttpGet(200, None, str(responseFunc(params)).encode(Protocol.FORMAT))
+					response = Protocol.formatHttpGet(200, None, responseFunc(params))
 				elif option == "POST":
 					requestData = conn.recv(int(headers['Content-Length']))
 					responseFunc(params, requestData)
 					response = Protocol.formatHttpPost(200)
 					print(response)
-			except (Protocol.CustomError, KeyError,OSError) as e:
-				print("EEEEEEEEEEEEEEEEEEEEEEEE")
+			except (Protocol.CustomError, KeyError, OSError) as e:
+				print(type(e), e)
 				if option == "GET":
-					response = Protocol.formatHttpGet(400)
+					response = Protocol.formatHttpGet(400, None, b"<div>" + str(e).encode() + b"</div>")
 				elif option == "POST":
-					response = Protocol.formatHttpPost(400,None,b"<div>" + str(e).encode() + b"</div>")
+					response = Protocol.formatHttpPost(400, None, b"<div>" + str(e).encode() + b"</div>")
 	return response
 
 

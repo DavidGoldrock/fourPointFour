@@ -140,17 +140,22 @@ def formatFileHttp(code: int, path: str, file: TextIOWrapper) -> bytes:
 						 f"Content-Type: {filenameToType[path[path.rfind('.') + 1:]]}\r\n", data)
 
 
-def calculateNext(data: dict) -> int:
-	return int(data["num"]) + 1
+def calculateNext(data: dict) -> bytes:
+	return str(int(data["num"]) + 1).encode(FORMAT)
 
 
-def calculateArea(data: dict) -> int: 
-	return int(float(data["width"])) * int(float(data["height"])) // 2
+def calculateArea(data: dict) -> bytes:
+	return str(int(float(data["width"])) * int(float(data["height"])) // 2).encode(FORMAT)
 
 class CustomError(Exception):
 	pass
 
-def upload(data, params):
+def getImage(data:dict) ->bytes:
+	retData = bytearray()
+	with open("./webroot/pictures/" + data["image-name"], "rb") as f:
+		retData = f.read()
+	return retData
+def upload(data: dict, params: bytes):
 	if not (data["file-name"][-3:] == "png" or data["file-name"][-3:] == "jpg"):
 		print("ERROR",data["file-name"][-3:])
 		raise CustomError("File extension not supported")
@@ -159,4 +164,4 @@ def upload(data, params):
 	return
 
 
-functions = {"/calculate-next": calculateNext, "/calculate-area": calculateArea, "/upload": upload}
+functions = {"/calculate-next": calculateNext, "/calculate-area": calculateArea, "/upload": upload, "/image" : getImage}
