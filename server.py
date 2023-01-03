@@ -30,7 +30,11 @@ def ReceiveRequest(conn: socket) -> bool:
 	"""
 	shouldStay = True
 	try:
-		data = conn.recv(Protocol.MAX_SIZE).decode(Protocol.FORMAT)
+		data = conn.recv(Protocol.MAX_SIZE)
+		while b"\r\n\r\n" not in data:
+			data += conn.recv(Protocol.MAX_SIZE)
+		data = data.decode()
+
 	# print("<<<<" + repr(data) + "<END>")
 	except (socket.error, UnicodeDecodeError):
 		return False
@@ -94,7 +98,7 @@ def handleRequest(data: str, conn: socket):
 				if option == "GET":
 					response = Protocol.formatHttpGet(200, None, responseFunc(params))
 				elif option == "POST":
-					requestData = conn.recv(int(headers['Content-Length']))
+					requestData = Protocol.recvAll(conn,int(headers['Content-Length']))
 					responseFunc(params, requestData)
 					response = Protocol.formatHttpPost(200)
 					print(response)

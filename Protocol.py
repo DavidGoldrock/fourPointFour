@@ -143,6 +143,20 @@ def formatFileHttp(code: int, path: str, file: TextIOWrapper) -> bytes:
 def calculateNext(data: dict) -> bytes:
 	return str(int(data["num"]) + 1).encode(FORMAT)
 
+def recvAll(conn: socket, length: int):
+    ogLength = length
+    returnValue = b''
+    i = 1
+    while length:
+        tempVal = conn.recv(length)
+        if not tempVal:
+            return b''
+        returnValue += tempVal
+        length -= len(tempVal)
+        print(f"[RECEIVED PACKET {i}] Download Percent {round(((ogLength - length )/ ogLength) * 100, 4)}")
+        i += 1
+    return returnValue
+
 
 def calculateArea(data: dict) -> bytes:
 	return str(int(float(data["width"])) * int(float(data["height"])) // 2).encode(FORMAT)
